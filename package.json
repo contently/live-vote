@@ -1,0 +1,8 @@
+{
+  "name": "live-vote",
+  "version": "1.0.0",
+  "description": "A live voting app for stuff",
+  "main": "index.js",
+  "author": "Seth Webster & Corey Finley",
+  "license": "MIT"
+}
