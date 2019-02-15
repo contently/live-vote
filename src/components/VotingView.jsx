@@ -1,0 +1,109 @@
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import {
+  Progress, Button, Row, Col, Card, CardGroup
+} from 'reactstrap';
+import Container from 'reactstrap/lib/Container';
+import CardBody from 'reactstrap/lib/CardBody';
+import Sound from 'react-sound';
+import mp3 from '../Jeopardy-theme-song.mp3';
+
+class VotingView extends Component {
+  onVote = (name) => {
+    const { onCastVote } = this.props;
+    onCastVote(name);
+  }
+
+  canVote = (name, item) => {
+    const { votingOpen } = this.props;
+    if (!votingOpen) return false;
+    if ((item.votes || []).find(s => s === name)) {
+      return false;
+    }
+    return true;
+  }
+
+  soundStatus = () => {
+    const { votingOpen } = this.props;
+    return votingOpen ? Sound.status.PLAYING : Sound.status.STOPPED;
+  }
+
+  progressColor = (val, max) => {
+    const perc = val / max;
+    if (perc > 0.5) return 'success';
+    if (perc > 0.30) return 'warning';
+    return 'danger';
+  }
+
+  render() {
+    const {
+      votables,
+      votingOpen,
+      timeRemaining, name,
+      voteDuration
+    } = this.props;
+    return (
+      <div>
+        <Sound
+          url={mp3}
+          playStatus={this.soundStatus()}
+        />
+        <Row noGutters>
+          <Col sm={12}>
+            <h4>Time Remaining</h4>
+            <Progress
+              value={timeRemaining}
+              max={voteDuration}
+              color={this.progressColor(timeRemaining, voteDuration)}
+            />
+          </Col>
+        </Row>
+        <h4>Options</h4>
+        <Row noGutters>
+          <Col sm={12}>
+            <Container fluid>
+              <CardGroup>
+                {votables.map(v => (
+                  <Card key={v.name}>
+                    <CardBody>
+                      <h4>{v.name}</h4>
+                      <small>
+                        {(v.votes || []).length}
+                        <span> members</span>
+                      </small>
+                      <p>
+                        {(v.votes || []).join(', ')}
+                      </p>
+                    </CardBody>
+                    <Button
+                      type="button"
+                      onClick={() => this.onVote(v.name)}
+                      color={!votingOpen ? 'secondary' : 'primary'}
+                      disabled={!this.canVote(name, v)}
+                    >
+                      Vote
+                    </Button>
+                  </Card>
+                ))}
+              </CardGroup>
+            </Container>
+          </Col>
+        </Row>
+      </div>
+    );
+  }
+}
+
+VotingView.propTypes = {
+  /* eslint-disable-next-line */
+  socket: PropTypes.object.isRequired,
+  onCastVote: PropTypes.func.isRequired,
+  votables: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired,
+  votingOpen: PropTypes.bool.isRequired,
+  timeRemaining: PropTypes.number.isRequired,
+  name: PropTypes.string.isRequired,
+  voteDuration: PropTypes.number.isRequired
+  // roomName: PropTypes.string.isRequired
+};
+
+export default VotingView;
