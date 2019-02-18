@@ -33,7 +33,6 @@ class Room {
 
   removeUserBySocket(socket) {
     const user = this.users.find(u => u.socket === socket);
-    console.log('rbs', user);
     if (user) this.removeUser(user.name);
   }
 
@@ -116,14 +115,15 @@ class Room {
 
   serialized() {
     const {
-      users, votables, votingOpen, votingEnds, voteDuration
+      users, votables, votingOpen, votingEnds, voteDuration, name
     } = this;
     return {
       users: users.map(u => ({ name: u.name, status: u.status })),
       votables,
       votingOpen,
       votingEnds,
-      voteDuration
+      voteDuration,
+      name
     };
   }
 }

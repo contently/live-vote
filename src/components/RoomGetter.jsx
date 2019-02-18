@@ -25,18 +25,34 @@ class RoomGetter extends Component {
     this.setState(newState);
   };
 
+  handleRoomClick(name) {
+    const { onStart } = this.props;
+    onStart(name);
+  }
+
   render() {
+    const { rooms } = this.props;
     return (
       <Form onSubmit={this.handleOnSubmit}>
         <FormGroup>
           <Label htmlFor="name">
-          What are you voting on?
+            What are you voting on?
             <Input type="text" name="name" onChange={this.handleChange} autoComplete="off" />
           </Label>
         </FormGroup>
         <FormGroup>
           <Button type="submit" color="primary">Start</Button>
         </FormGroup>
+        <h4>Rooms</h4>
+        {(rooms || []).map(r => (
+          <Button
+            key={r.name}
+            type="button"
+            onClick={() => { this.handleRoomClick(r.name); }}
+          >
+            {r.name}
+          </Button>
+        ))}
       </Form>
     );
   }
@@ -44,6 +60,7 @@ class RoomGetter extends Component {
 
 RoomGetter.propTypes = {
   onStart: PropTypes.func.isRequired,
+  rooms: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
 };
 
 export default RoomGetter;

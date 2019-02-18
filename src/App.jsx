@@ -75,6 +75,10 @@ class App extends Component {
       cogoToast.error(message);
     });
 
+    this.socket.on('all-rooms', (rooms) => {
+      this.setState({ rooms });
+    });
+
     this.socket.on('connect', () => {
       const name = cookies.get('name');
       const { roomName } = this.state;
@@ -84,6 +88,7 @@ class App extends Component {
       if (name && roomName) {
         this.handleOnStartRoom(roomName);
       }
+      this.socket.emit('list-rooms');
     });
   }
 
@@ -144,7 +149,7 @@ class App extends Component {
     const { admin, name,
       roomName, votables,
       votingOpen, voteDuration,
-      timeRemaining, users } = this.state;
+      timeRemaining, users, rooms } = this.state;
 
     if (admin) {
       return (<><TopNav itemClicked={this.handleNavClick} users={users} />
@@ -168,13 +173,25 @@ class App extends Component {
       if (!name) {
         return (<>
           <TopNav itemClicked={this.handleNavClick} users={users} />
-          <NameGetter onStart={this.handleOnStart} />
+          <Container fluid>
+            <Row>
+              <Col xs={12}>
+                <NameGetter onStart={this.handleOnStart} />
+              </Col>
+            </Row>
+          </Container>
         </>);
       }
       if (!roomName) {
         return (<>
           <TopNav itemClicked={this.handleNavClick} users={users} />
-          <RoomGetter onStart={this.handleOnStartRoom} />
+          <Container fluid>
+            <Row>
+              <Col xs={12}>
+                <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms} />
+              </Col>
+            </Row>
+          </Container>
         </>);
       }
       return (

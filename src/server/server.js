@@ -70,6 +70,10 @@ io.on('connection', (socket) => {
     if (!state.rooms[lowerRoomName]) return;
     state.rooms[lowerRoomName].castVote(name, option);
   });
+
+  socket.on('list-rooms', () => {
+    socket.emit('all-rooms', (Object.keys(state.rooms).map(r => state.rooms[r].serialized())));
+  });
 });
 
 // This allows us to serve the react app
