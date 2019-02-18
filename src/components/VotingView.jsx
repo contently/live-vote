@@ -6,6 +6,7 @@ import {
 import Container from 'reactstrap/lib/Container';
 import CardBody from 'reactstrap/lib/CardBody';
 import Sound from 'react-sound';
+import Badge from 'reactstrap/lib/Badge';
 import mp3 from '../Jeopardy-theme-song.mp3';
 
 class VotingView extends Component {
@@ -72,7 +73,7 @@ class VotingView extends Component {
                         <span> members</span>
                       </small>
                       <p>
-                        {(v.votes || []).join(', ')}
+                        {(v.votes || []).map(n => <Badge color="info" style={{ marginRight: '5px' }}>{n}</Badge>)}
                       </p>
                     </CardBody>
                     <Button

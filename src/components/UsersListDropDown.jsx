@@ -10,12 +10,12 @@ const UsersListDropDown = (props) => {
     <UncontrolledDropdown nav inNavbar>
       <DropdownToggle nav caret>
         <Badge color="success">
-          <span>{(users || []).length}</span>
+          <span>{(users || []).filter(u => u.status === 'online').length}</span>
           <span> users</span>
         </Badge>
       </DropdownToggle>
       <DropdownMenu right>
-        {(users || []).map(u => (
+        {(users || []).filter(u => u.status === 'online').map(u => (
           <DropdownItem key={u.name}>
             {u.name}
           </DropdownItem>

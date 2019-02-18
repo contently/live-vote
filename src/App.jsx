@@ -37,7 +37,6 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-    console.log(props);
     this.toastManager = props.toastManager;
     this.socket = socketIOClient(host);
 
@@ -78,8 +77,12 @@ class App extends Component {
 
     this.socket.on('connect', () => {
       const name = cookies.get('name');
+      const { roomName } = this.state;
       if (name) {
         this.handleOnStart(name);
+      }
+      if (name && roomName) {
+        this.handleOnStartRoom(roomName);
       }
     });
   }
