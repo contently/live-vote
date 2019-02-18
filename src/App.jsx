@@ -71,8 +71,12 @@ class App extends Component {
       this.setState({ users });
     });
 
-    this.socket.on('error', ({ message }) => {
+    this.socket.on('server-error', ({ message }) => {
       cogoToast.error(message);
+    });
+
+    this.socket.on('room-joined', (room) => {
+      this.handleRoomJoined(room);
     });
 
     this.socket.on('all-rooms', (rooms) => {
@@ -84,6 +88,7 @@ class App extends Component {
       const { roomName } = this.state;
       if (name) {
         this.handleOnStart(name);
+        this.handleRoomRoute();
       }
       if (name && roomName) {
         this.handleOnStartRoom(roomName);
@@ -93,16 +98,18 @@ class App extends Component {
 
   }
 
-  componentDidMount() {
-    this.handleRoomRoute();
-  }
-
   handleRoomRoute() {
     const { location: { pathname } } = window;
-    if (pathname) {
-      /* this is a room */
-      this.setState({ roomName:pathname.substring(1) })
+    if (pathname && pathname !== '/') {
+      this.handleOnStartRoom(null, pathname.substring(1));
     }
+  }
+
+  handleRoomJoined(room) {
+    this.setState({
+      roomName: room.name
+    });
+    history.pushState({}, 'room', room.slug);
   }
 
   handleOnStart = (name) => {
@@ -110,11 +117,11 @@ class App extends Component {
     cookies.set('name', name);
   }
 
-  handleOnStartRoom = (roomName) => {
+  handleOnStartRoom = (roomName, route = null) => {
     const { name } = this.state;
-    this.setState({ roomName });
-    this.socket.emit('join-room', { roomName, userName: name });
-    history.pushState({}, 'room', roomName);
+    //this.setState({ roomName });
+    this.socket.emit('join-room', { roomName, route, userName: name });
+    //history.pushState({}, 'room', roomName);
   }
 
   toggleAdmin = () => {
@@ -145,10 +152,22 @@ class App extends Component {
     socket.emit('cast-vote', { option, name, roomName });
   }
 
+  handleClickHome() {
+    this.setState({ roomName: null });
+    history.pushState({}, 'home', '/');
+  }
+
   handleNavClick = (which) => {
     switch (which) {
       case 'admin':
         this.toggleAdmin();
+        break;
+      case 'rooms':
+        this.handleClickHome();
+        break;
+      case '/':
+        this.handleClickHome();
+        break;
       default:
     }
   }
@@ -202,7 +221,7 @@ class App extends Component {
           <Container fluid>
             <Row>
               <Col xs={12}>
-                <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms} />
+                <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms || []} />
               </Col>
             </Row>
           </Container>

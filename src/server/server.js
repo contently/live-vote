@@ -21,13 +21,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-room', (payload) => {
-    const { userName, roomName } = payload;
-    const lowerRoomName = roomName.toLowerCase().trim();
-    if (!state.rooms[lowerRoomName]) {
-      state.rooms[lowerRoomName] = new Room(lowerRoomName, io);
+    console.log('join-room', payload);
+    const { userName, roomName, route } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) {
+      if (roomName) {
+        state.rooms[slug] = new Room(roomName, io);
+      } else {
+        socket.emit('server-error', { message: 'Room does not exist' });
+      }
     }
-    socket.join(lowerRoomName);
-    state.rooms[lowerRoomName].addUser(userName, socket);
+    if (state.rooms[slug]) {
+      socket.join(slug);
+      state.rooms[slug].addUser(userName, socket);
+      socket.emit('room-joined', state.rooms[slug].serialized());
+      console.log('state', state);
+    }
   });
 
   socket.on('create-votable', (payload) => {

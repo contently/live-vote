@@ -9,11 +9,14 @@ const TopNav = (props) => {
   const { itemClicked, users } = props;
   return (
     <Navbar color="light" light expand="md" sticky="top">
-      <NavbarBrand>
+      <NavbarBrand onClick={() => { itemClicked('/'); }} style={{ cursor: 'pointer' }}>
         Live-Vote
       </NavbarBrand>
       <Nav>
         <UsersListDropDown users={users} />
+        <NavItem style={{ marginRight: '10px' }}>
+          <Button type="button" name="admin" onClick={() => { itemClicked('/'); }}>Rooms</Button>
+        </NavItem>
         <NavItem>
           <Button type="button" name="admin" onClick={() => { itemClicked('admin'); }}>Admin</Button>
         </NavItem>

@@ -1,5 +1,9 @@
 /* eslint-disable no-console */
 class Room {
+  static nameToSlug(name) {
+    return name.toLowerCase().trim().replace(/([^a-zA-Z0-9])/g, '-').replace(/(-{2})/g, '-');
+  }
+
   constructor(name, socketIo) {
     this.name = name;
     this.io = socketIo;
@@ -9,6 +13,7 @@ class Room {
     this.voteDuration = (33 * 4);
     this.votingEnds = 0;
     this.votingInterval = null;
+    this.slug = Room.nameToSlug(name);
   }
 
   addUser(name, socket) {
@@ -116,7 +121,7 @@ class Room {
 
   serialized() {
     const {
-      users, votables, votingOpen, votingEnds, voteDuration, name
+      users, votables, votingOpen, votingEnds, voteDuration, name, slug
     } = this;
     return {
       users: users.map(u => ({ name: u.name, status: u.status })),
@@ -124,7 +129,8 @@ class Room {
       votingOpen,
       votingEnds,
       voteDuration,
-      name
+      name,
+      slug
     };
   }
 }
