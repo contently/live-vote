@@ -8,7 +8,7 @@ import UsersListDropDown from './UsersListDropDown';
 const TopNav = (props) => {
   const { itemClicked, users } = props;
   return (
-    <Navbar color="light" light expand="md">
+    <Navbar color="light" light expand="md" sticky="top">
       <NavbarBrand>
         Live-Vote
       </NavbarBrand>

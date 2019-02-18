@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Progress, Button, Row, Col, Card, CardGroup
+  Progress, Button, Row, Col, Card
 } from 'reactstrap';
-import Container from 'reactstrap/lib/Container';
+// import Container from 'reactstrap/lib/Container';
 import CardBody from 'reactstrap/lib/CardBody';
 import Sound from 'react-sound';
 import Badge from 'reactstrap/lib/Badge';
@@ -61,14 +61,14 @@ class VotingView extends Component {
         </Row>
         <h4>Options</h4>
         <Row noGutters>
-          <Col sm={12}>
-            <Container fluid>
-              <CardGroup>
-                {votables.map(v => (
-                  <Card key={v.name}>
+          <Col xs={12} md={{ size: 10, offset: 1 }}>
+            <Row>
+              {votables.map(v => (
+                <Col xs={12} md={4} key={v.name}>
+                  <Card style={{ marginBottom: '20px' }}>
                     <CardBody>
-                      <h4>{v.name}</h4>
-                      <small>
+                      <h4 style={{ whiteSpace: 'nowrap', textOverflow: 'ellpisis' }}>{v.name}</h4>
+                      <small style={{ whiteSpace: 'nowrap', textOverflow: 'ellpisis' }}>
                         {(v.votes || []).length}
                         <span> members</span>
                       </small>
@@ -85,9 +85,9 @@ class VotingView extends Component {
                       Vote
                     </Button>
                   </Card>
-                ))}
-              </CardGroup>
-            </Container>
+                </Col>
+              ))}
+            </Row>
           </Col>
         </Row>
       </div>
