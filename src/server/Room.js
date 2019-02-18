@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 class Room {
   constructor(name, socketIo) {
     this.name = name;

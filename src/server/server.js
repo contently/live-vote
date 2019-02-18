@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const app = require('express')();
 const express = require('express');
 const http = require('http').Server(app);
