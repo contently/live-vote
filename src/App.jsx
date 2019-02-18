@@ -90,6 +90,19 @@ class App extends Component {
       }
       this.socket.emit('list-rooms');
     });
+
+  }
+
+  componentDidMount() {
+    this.handleRoomRoute();
+  }
+
+  handleRoomRoute() {
+    const { location: { pathname } } = window;
+    if (pathname) {
+      /* this is a room */
+      this.setState({ roomName:pathname.substring(1) })
+    }
   }
 
   handleOnStart = (name) => {
@@ -101,6 +114,7 @@ class App extends Component {
     const { name } = this.state;
     this.setState({ roomName });
     this.socket.emit('join-room', { roomName, userName: name });
+    history.pushState({}, 'room', roomName);
   }
 
   toggleAdmin = () => {
