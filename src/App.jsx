@@ -80,7 +80,13 @@ class App extends Component {
     });
 
     this.socket.on('all-rooms', (rooms) => {
+      const { roomName } = this.state;
       this.setState({ rooms });
+      if (!rooms.find(n => n.name === roomName)) {
+        this.handleNavClick('/');
+        this.setState({ admin: false });
+        cogoToast.success('Room closed');
+      }
     });
 
     this.socket.on('connect', () => {
@@ -178,6 +184,12 @@ class App extends Component {
     socket.emit('toggle-voting', { name, roomName });
   }
 
+  handleCloseRoom = () => {
+    const { roomName } = this.state;
+    const { socket } = this;
+    socket.emit('close-room', { roomName: roomName });
+  }
+
   render() {
     const { admin, name,
       roomName, votables,
@@ -196,6 +208,7 @@ class App extends Component {
                 onVotableAdded={this.handleVotableAdded}
                 onToggleVoting={this.handleToggleVoting}
                 onSetVoteDuration={this.handleSetVoteDuration}
+                onCloseRoom={this.handleCloseRoom}
                 voteDuration={voteDuration}
                 roomName={roomName} />
               <button type='button' onClick={this.toggleAdmin} >Finish</button>

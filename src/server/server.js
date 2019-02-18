@@ -39,6 +39,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('close-room', (payload) => {
+    const { roomName, route } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) return;
+    delete state.rooms[slug];
+    socket.emit('all-rooms', (Object.keys(state.rooms).map(r => state.rooms[r].serialized())));
+  });
+
   socket.on('create-votable', (payload) => {
     // TODO: Capture who did this
     const { roomName, option } = payload;

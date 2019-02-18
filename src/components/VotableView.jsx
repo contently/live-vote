@@ -37,6 +37,11 @@ class VotableView extends Component {
     }
   };
 
+  handleCloseRoom = () => {
+    const { onCloseRoom } = this.props;
+    onCloseRoom();
+  }
+
   deleteItem = (name) => {
     const { onVotableDelete } = this.props;
     onVotableDelete(name);
@@ -76,7 +81,7 @@ class VotableView extends Component {
             {n.name}
           </div>
         ))}
-
+        <Button type="button" color="danger" onClick={this.handleCloseRoom}>Close Room</Button>
       </Form>
     );
   }
@@ -87,6 +92,7 @@ VotableView.propTypes = {
   onVotableDelete: PropTypes.func.isRequired,
   onToggleVoting: PropTypes.func.isRequired,
   onSetVoteDuration: PropTypes.func.isRequired,
+  onCloseRoom: PropTypes.func.isRequired,
   votables: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired,
   votingOpen: PropTypes.bool.isRequired,
   voteDuration: PropTypes.number.isRequired,
