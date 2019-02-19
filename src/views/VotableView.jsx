@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   Form, Button, Label, FormGroup, Input
 } from 'reactstrap';
+import ConfirmButton from '../components/ConfirmButton';
 
 class VotableView extends Component {
   state = {
@@ -12,15 +13,16 @@ class VotableView extends Component {
   constructor(props) {
     super(props);
     this.state.socket = props.socket;
-    console.log('votable-view');
   }
 
   handleOnSubmit = (e) => {
     const { name } = this.state;
     const { onVotableAdded } = this.props;
     e.preventDefault();
-    onVotableAdded(name);
-    this.setState({ name: '' });
+    if (name.trim().length > 0) {
+      onVotableAdded(name);
+      this.setState({ name: '' });
+    }
   };
 
   handleChange = (e) => {
@@ -62,6 +64,7 @@ class VotableView extends Component {
         {votingOpen ? <Button type="button" onClick={this.toggleVoting} color="danger">Close Voting</Button>
           : <Button type="button" onClick={this.toggleVoting} color="success" disabled={!(votables.length > 1)}>Open Voting</Button>}
         <h4>Settings</h4>
+        <ConfirmButton name="close-room" color="warning" cancelColor="none" confirmText="Sure?" onClick={this.handleCloseRoom}>Close Room</ConfirmButton>
         <FormGroup disabled={votingOpen}>
           <Label htmlFor="name">
             Vote Duration (seconds):
@@ -74,7 +77,7 @@ class VotableView extends Component {
             Option Name:
             <Input type="text" onChange={this.handleChange} value={name} name="name" disabled={votingOpen} />
           </Label>
-          <Button type="submit" disabled={votingOpen}>+</Button>
+          <Button type="submit" disabled={name.trim().length === 0 || votingOpen}>+</Button>
         </FormGroup>
         {votables.map(n => (
           <div key={n.name}>
@@ -82,7 +85,6 @@ class VotableView extends Component {
             {n.name}
           </div>
         ))}
-        <Button type="button" color="danger" onClick={this.handleCloseRoom}>Close Room</Button>
       </Form>
     );
   }

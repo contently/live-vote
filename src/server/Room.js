@@ -80,11 +80,12 @@ class Room {
 
   toggleVoting() {
     this.votingOpen = !this.votingOpen;
-    this.broadcast('voting-status', this.votingOpen);
     if (this.votingOpen) {
       this.startTimer();
+      this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} voting opened`, type: 'success' } });
     } else {
       this.stopTimer();
+      this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} voting ended`, type: 'warn' } });
     }
   }
 
@@ -94,7 +95,7 @@ class Room {
     );
     this.votingInterval = setInterval(() => {
       const remaining = this.voteTimeRemaining() > 0 ? this.voteTimeRemaining() : 0;
-      this.broadcast('vote-time-remaining', remaining);
+      this.broadcast('vote-time-remaining', { roomName: this.name, remaining });
       if (this.voteTimeRemaining() < 0) {
         this.toggleVoting();
       }

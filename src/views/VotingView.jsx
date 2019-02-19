@@ -40,7 +40,8 @@ class VotingView extends Component {
     const {
       votables,
       votingOpen,
-      timeRemaining, name,
+      timeRemaining,
+      name,
       voteDuration
     } = this.props;
     return (
@@ -73,7 +74,7 @@ class VotingView extends Component {
                         <span> members</span>
                       </small>
                       <p>
-                        {(v.votes || []).map(n => <Badge color="info" style={{ marginRight: '5px' }}>{n}</Badge>)}
+                        {(v.votes || []).map(n => <Badge key={n} color="info" style={{ marginRight: '5px' }}>{n}</Badge>)}
                       </p>
                     </CardBody>
                     <Button

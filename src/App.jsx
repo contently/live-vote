@@ -4,6 +4,7 @@ import socketIOClient from 'socket.io-client';
 // import PropTypes from 'prop-types';
 import cogoToast from 'cogo-toast';
 import cookies from 'browser-cookies';
+import { Spinner } from 'reactstrap';
 import VotableView from './views/VotableView';
 import VotingView from './views/VotingView';
 import NameGetter from './components/NameGetter';
@@ -11,8 +12,10 @@ import Layout from './views/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import RoomGetter from './components/RoomGetter';
-import If from './components/If';
+// import If from './components/If';
+import UserRoomStatus from './components/UserRoomStatus';
 
+// Local vs. Prod websockets url hack
 let host = window.location.origin.replace(/^http/, 'ws');
 
 if (host.includes('localhost')) {
@@ -24,13 +27,9 @@ if (host.includes('localhost')) {
 class App extends Component {
   state = {
     admin: false,
-    votingOpen: false,
     name: null,
-    currentRoom: null,
-    votables: [],
-    timeRemaining: 300,
+    currentRoomIndex: -1,
     users: [],
-    voteDuration: 120,
     rooms: [],
     connected: false
   }
@@ -43,36 +42,35 @@ class App extends Component {
     this.socket.on('room-updated', data => {
       console.log('room-updated', data);
       const { room, message } = data;
-
-      this.setState({
-        votables: room.votables,
-        users: room.users,
-        voteDuration: room.voteDuration,
-        votingOpen: room.votingOpen
-      });
+      this.updateRoom(room);
       if (message) {
         const messageType = message.type || 'success';
         cogoToast[messageType](message.content, {});
       }
     });
 
-    this.socket.on('voting-status', (payload) => {
-      this.setState({ votingOpen: payload });
-      if (payload) {
-        cogoToast.success('Voting opened');
-      }
-    });
-
     this.socket.on('vote-time-remaining', (payload) => {
-      this.setState({ timeRemaining: payload });
+      const { rooms } = this.state;
+      const { roomName, remaining } = payload;
+      const copy = [...rooms];
+      const item = copy.find(r => r.name === roomName);
+      const currentRoom = this.currentRoom();
+
+      if (item) {
+        item.timeRemaining = remaining;
+      }
+      this.setState({ rooms: copy });
     });
 
     this.socket.on('users-status', (users) => {
       this.setState({ users });
     });
 
-    this.socket.on('server-error', ({ message }) => {
+    this.socket.on('server-error', ({ message, code }) => {
       cogoToast.error(message);
+      if (code == 404) {
+        this.handleNavClick('/');
+      }
     });
 
     this.socket.on('room-joined', (room) => {
@@ -80,18 +78,18 @@ class App extends Component {
     });
 
     this.socket.on('all-rooms', (rooms) => {
-      const { currentRoom } = this.state;
+      console.log('all-rooms', rooms);
+      const currentRoom = this.currentRoom();
       this.setState({ rooms });
       if (currentRoom && !rooms.find(n => n.name === currentRoom.name)) {
         this.handleNavClick('/');
-        //this.setState({ admin: false });
         cogoToast.success('Room closed');
       }
     });
 
     this.socket.on('connect', () => {
       const name = cookies.get('name');
-      const { currentRoom } = this.state;
+      const currentRoom = this.currentRoom();
       if (name) {
         this.handleOnStart(name);
         this.handleRoomRoute();
@@ -100,9 +98,46 @@ class App extends Component {
         this.handleOnStartRoom(currentRoom.name);
       }
       this.setState({ connected: true });
-      this.socket.emit('list-rooms');
+      // this.socket.emit('list-rooms');
     });
 
+  }
+
+  updateRoom(room) {
+    const { rooms } = this.state;
+    const items = rooms.map(r => {
+      if (r.name === room.name) {
+        return room;
+      }
+      return r;
+    });
+    this.setState({ rooms: items });
+  }
+
+  findRoom(room) {
+    return this.findRoomByName(room.name);
+  }
+
+  findRoomByName(name) {
+    const { rooms } = this.state;
+    return rooms[this.indexOfRoomByName(name)];
+  }
+
+  indexOfRoomByName(name) {
+    console.log('index of room by name', name);
+    const { rooms } = this.state;
+    for (let x = 0; x < rooms.length; x += 1) {
+      console.log(rooms[x].name, name);
+      if (rooms[x].name === name) {
+        return x;
+      }
+    }
+    return -1;
+  }
+
+  currentRoom() {
+    const { rooms, currentRoomIndex } = this.state;
+    return rooms[currentRoomIndex] || null;
   }
 
   handleRoomRoute() {
@@ -113,9 +148,17 @@ class App extends Component {
   }
 
   handleRoomJoined(room) {
-    this.setState({
-      currentRoom: room
-    });
+    const localRoom = this.indexOfRoomByName(room.name);
+    console.log('local room', localRoom);
+    if (localRoom >= 0) {
+      this.setState({
+        currentRoomIndex: localRoom
+      });
+    } else {
+      const { rooms } = this.state;
+      this.setState({ rooms: [...rooms, room] });
+      this.setState({ currentRoomIndex: rooms.length });
+    }
     history.pushState({}, 'room', room.slug);
   }
 
@@ -126,9 +169,7 @@ class App extends Component {
 
   handleOnStartRoom = (roomName, route = null) => {
     const { name } = this.state;
-    //this.setState({ currentRoom });
     this.socket.emit('join-room', { roomName, route, userName: name });
-    //history.pushState({}, 'room', currentRoom);
   }
 
   toggleAdmin = () => {
@@ -137,7 +178,8 @@ class App extends Component {
 
   handleVotableAdded = (option) => {
     const { socket } = this;
-    const { currentRoom, name } = this.state;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
     socket.emit('create-votable', { option, name, roomName: currentRoom.name });
   }
 
@@ -149,19 +191,20 @@ class App extends Component {
 
   handleSetVoteDuration = (voteDuration) => {
     const { socket } = this;
-    const { currentRoom, name } = this.state;
-    console.log(currentRoom);
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
     socket.emit('set-vote-duration', { roomName: currentRoom.name, name, voteDuration });
   }
 
   handleCastVote = (option) => {
     const { socket } = this;
-    const { name, currentRoom } = this.state;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
     socket.emit('cast-vote', { option, name, roomName: currentRoom.name });
   }
 
   handleClickHome() {
-    this.setState({ currentRoom: null });
+    this.setState({ currentRoomIndex: -1 });
     history.pushState({}, 'home', '/');
   }
 
@@ -182,35 +225,54 @@ class App extends Component {
 
   handleToggleVoting = () => {
     const { socket } = this;
-    const { name, currentRoom } = this.state;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
     socket.emit('toggle-voting', { name, roomName: currentRoom.name });
   }
 
   handleCloseRoom = () => {
-    const { currentRoom } = this.state;
     const { socket } = this;
+    const currentRoom = this.currentRoom();
     socket.emit('close-room', { roomName: currentRoom.name });
   }
 
   render() {
-    const { admin, name,
-      currentRoom, votables,
-      votingOpen, voteDuration,
-      timeRemaining, users, rooms, connected } = this.state;
+    const { admin,
+      name,
+      rooms, connected } = this.state;
+
     if (!connected) {
       return (
-        <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}></Layout>
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
+          <Spinner color='primary'>Hold tight</Spinner>
+        </Layout>
       )
     }
-    return (<>
-      <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
-        <If condition={name === null}>
+
+    if (!name) {
+      return (
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
           <NameGetter onStart={this.handleOnStart} />
-        </If>
-        <If condition={currentRoom === null}>
+        </Layout>
+      );
+    }
+
+    const currentRoom = this.currentRoom();
+
+    if (!currentRoom) {
+      return (
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
+          <h4>Join / Create Room</h4>
           <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms || []} />
-        </If>
-        {admin && currentRoom &&
+        </Layout>
+      );
+    }
+
+    const { votables, votingOpen, voteDuration } = currentRoom;
+    console.log("CR:", currentRoom);
+    if (admin) {
+      return (
+        <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
           <VotableView socket={this.socket}
             votingOpen={votingOpen}
             votables={votables}
@@ -221,16 +283,24 @@ class App extends Component {
             onCloseRoom={this.handleCloseRoom}
             voteDuration={voteDuration}
             currentRoom={currentRoom} />
-        }
+        </Layout>
+      )
+    }
+
+    return (<>
+      <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
         {!admin && name && currentRoom &&
-          <VotingView socket={this.socket}
-            votables={votables}
-            votingOpen={votingOpen}
-            onCastVote={this.handleCastVote}
-            timeRemaining={timeRemaining}
-            name={name}
-            currentRoom={currentRoom.name}
-            voteDuration={voteDuration}></VotingView>
+          <>
+            <UserRoomStatus user={name} currentRoom={currentRoom} />
+            <VotingView socket={this.socket}
+              votables={currentRoom.votables}
+              votingOpen={currentRoom.votingOpen}
+              onCastVote={this.handleCastVote}
+              timeRemaining={currentRoom.timeRemaining || currentRoom.voteDuration}
+              name={name}
+              currentRoom={currentRoom.name}
+              voteDuration={currentRoom.voteDuration}></VotingView>
+          </>
         }
       </Layout>
     </>

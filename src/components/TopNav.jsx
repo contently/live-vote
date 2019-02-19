@@ -18,7 +18,14 @@ const TopNav = (props) => {
           <Button type="button" name="admin" onClick={() => { itemClicked('/'); }}>Rooms</Button>
         </NavItem>
         <NavItem>
-          <Button type="button" name="admin" onClick={() => { itemClicked('admin'); }} disabled={!currentRoom}>Admin</Button>
+          <Button
+            type="button"
+            name="admin"
+            onClick={() => { itemClicked('admin'); }}
+            disabled={!currentRoom || currentRoom.name === 'Loading'}
+          >
+            Admin
+          </Button>
         </NavItem>
       </Nav>
     </Navbar>
@@ -28,7 +35,7 @@ const TopNav = (props) => {
 TopNav.propTypes = {
   itemClicked: PropTypes.func.isRequired,
   currentRoom: PropTypes.shape({ name: PropTypes.string }).isRequired,
-//  users: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
+  //  users: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
 };
 
 export default TopNav;
