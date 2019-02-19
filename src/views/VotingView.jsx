@@ -50,7 +50,7 @@ class VotingView extends Component {
           url={mp3}
           playStatus={this.soundStatus()}
         />
-        <Row noGutters>
+        <Row>
           <Col sm={12}>
             <h4>Time Remaining</h4>
             <Progress
@@ -61,7 +61,7 @@ class VotingView extends Component {
           </Col>
         </Row>
         <h4>Options</h4>
-        <Row noGutters>
+        <Row>
           <Col xs={12} md={{ size: 10, offset: 1 }}>
             <Row>
               {votables.map(v => (

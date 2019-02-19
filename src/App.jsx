@@ -77,6 +77,15 @@ class App extends Component {
       this.handleRoomJoined(room);
     });
 
+    this.socket.on('room-closed', (room) => {
+      const currentRoom = this.currentRoom();
+      console.log('room-closed', room);
+      if (!currentRoom) return;
+      if (room.name === currentRoom.name) {
+        this.handleNavClick('/');
+      }
+    });
+
     this.socket.on('all-rooms', (rooms) => {
       console.log('all-rooms', rooms);
       const currentRoom = this.currentRoom();
@@ -105,6 +114,7 @@ class App extends Component {
 
   updateRoom(room) {
     const { rooms } = this.state;
+    if (!room) debugger;
     const items = rooms.map(r => {
       if (r.name === room.name) {
         return room;
@@ -269,7 +279,6 @@ class App extends Component {
     }
 
     const { votables, votingOpen, voteDuration } = currentRoom;
-    console.log("CR:", currentRoom);
     if (admin) {
       return (
         <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>

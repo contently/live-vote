@@ -46,6 +46,11 @@ class App {
     return Object.keys(rooms).map(r => rooms[r].serialized());
   }
 
+  createRoom(roomName, route, io) {
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    this.state.rooms[slug] = new Room(roomName, io);
+    io.emit('all-rooms', (Object.keys(this.state.rooms).map(r => this.state.rooms[r].serialized())));
+  }
 
   wireHandlers() {
     const { io } = this;
@@ -57,7 +62,7 @@ class App {
         const slug = roomName ? Room.nameToSlug(roomName) : route;
         if (!this.state.rooms[slug]) {
           if (roomName) {
-            this.state.rooms[slug] = new Room(roomName, io);
+            this.createRoom(roomName, route, io);
           } else {
             socket.emit('server-error', { message: 'Room does not exist', code: '404' });
           }
@@ -66,6 +71,7 @@ class App {
           socket.join(slug);
           this.state.rooms[slug].addUser(userName, socket);
           socket.emit('room-joined', this.state.rooms[slug].serialized());
+          io.emit('room-updated', { room: this.state.rooms[slug].serialized() });
         }
       });
 
@@ -73,8 +79,9 @@ class App {
         const { roomName, route } = payload;
         const slug = roomName ? Room.nameToSlug(roomName) : route;
         if (!this.state.rooms[slug]) return;
+        this.state.rooms[slug].dispose();
         delete this.state.rooms[slug];
-        socket.emit('all-rooms', (Object.keys(this.state.rooms).map(r => this.state.rooms[r].serialized())));
+        io.emit('all-rooms', (Object.keys(this.state.rooms).map(r => this.state.rooms[r].serialized())));
       });
 
       socket.on('create-votable', (payload) => {

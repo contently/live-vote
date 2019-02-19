@@ -24,7 +24,7 @@ class Room {
     }
     user.status = 'online';
     user.socket = socket;
-    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} joined`, type: 'success' } });
+    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} joined ${this.name}`, type: 'success' } });
   }
 
   removeUser(name) {
@@ -34,7 +34,7 @@ class Room {
       }
       return u;
     });
-    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} left`, type: 'warn' } });
+    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} left  ${this.name}`, type: 'warn' } });
   }
 
   removeUserBySocket(socket) {
@@ -120,6 +120,12 @@ class Room {
     this.io.in(this.slug).emit(action, payload);
   }
 
+  dispose() {
+    console.log('dispose', this.name);
+    this.stopTimer();
+    this.broadcast('room-closed', { room: this.serialized() });
+  }
+
   serialized() {
     const {
       users, votables, votingOpen, votingEnds, voteDuration, name, slug
@@ -131,7 +137,8 @@ class Room {
       votingEnds,
       voteDuration,
       name,
-      slug
+      slug,
+      timeRemaining: this.voteTimeRemaining()
     };
   }
 }
