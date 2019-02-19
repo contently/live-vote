@@ -2,18 +2,16 @@ import React, { Component } from 'react';
 import { observer } from 'mobx-react';
 import socketIOClient from 'socket.io-client';
 // import PropTypes from 'prop-types';
-import {
-  Container, Row, Col, Badge
-} from 'reactstrap';
 import cogoToast from 'cogo-toast';
 import cookies from 'browser-cookies';
-import VotableView from './components/VotableView';
-import VotingView from './components/VotingView';
+import VotableView from './views/VotableView';
+import VotingView from './views/VotingView';
 import NameGetter from './components/NameGetter';
+import Layout from './views/Layout';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import TopNav from './components/TopNav';
 import RoomGetter from './components/RoomGetter';
+import If from './components/If';
 
 let host = window.location.origin.replace(/^http/, 'ws');
 
@@ -28,11 +26,13 @@ class App extends Component {
     admin: false,
     votingOpen: false,
     name: null,
-    roomName: null,
+    currentRoom: null,
     votables: [],
     timeRemaining: 300,
     users: [],
-    voteDuration: 120
+    voteDuration: 120,
+    rooms: [],
+    connected: false
   }
 
   constructor(props) {
@@ -80,25 +80,26 @@ class App extends Component {
     });
 
     this.socket.on('all-rooms', (rooms) => {
-      const { roomName } = this.state;
+      const { currentRoom } = this.state;
       this.setState({ rooms });
-      if (!rooms.find(n => n.name === roomName)) {
+      if (currentRoom && !rooms.find(n => n.name === currentRoom.name)) {
         this.handleNavClick('/');
-        this.setState({ admin: false });
+        //this.setState({ admin: false });
         cogoToast.success('Room closed');
       }
     });
 
     this.socket.on('connect', () => {
       const name = cookies.get('name');
-      const { roomName } = this.state;
+      const { currentRoom } = this.state;
       if (name) {
         this.handleOnStart(name);
         this.handleRoomRoute();
       }
-      if (name && roomName) {
-        this.handleOnStartRoom(roomName);
+      if (name && currentRoom) {
+        this.handleOnStartRoom(currentRoom.name);
       }
+      this.setState({ connected: true });
       this.socket.emit('list-rooms');
     });
 
@@ -113,21 +114,21 @@ class App extends Component {
 
   handleRoomJoined(room) {
     this.setState({
-      roomName: room.name
+      currentRoom: room
     });
     history.pushState({}, 'room', room.slug);
   }
 
   handleOnStart = (name) => {
-    this.setState({ name });
     cookies.set('name', name);
+    this.setState({ name });
   }
 
   handleOnStartRoom = (roomName, route = null) => {
     const { name } = this.state;
-    //this.setState({ roomName });
+    //this.setState({ currentRoom });
     this.socket.emit('join-room', { roomName, route, userName: name });
-    //history.pushState({}, 'room', roomName);
+    //history.pushState({}, 'room', currentRoom);
   }
 
   toggleAdmin = () => {
@@ -136,30 +137,31 @@ class App extends Component {
 
   handleVotableAdded = (option) => {
     const { socket } = this;
-    const { roomName, name } = this.state;
-    socket.emit('create-votable', { option, name, roomName });
+    const { currentRoom, name } = this.state;
+    socket.emit('create-votable', { option, name, roomName: currentRoom.name });
   }
 
   handleVotableDelete = (option) => {
     const { socket } = this;
-    const { roomName, name } = this.state;
-    socket.emit('delete-votable', { option, roomName, name });
+    const { currentRoom, name } = this.state;
+    socket.emit('delete-votable', { option, roomName: currentRoom.name, name });
   }
 
   handleSetVoteDuration = (voteDuration) => {
     const { socket } = this;
-    const { roomName, name } = this.state;
-    socket.emit('set-vote-duration', { roomName, name, voteDuration });
+    const { currentRoom, name } = this.state;
+    console.log(currentRoom);
+    socket.emit('set-vote-duration', { roomName: currentRoom.name, name, voteDuration });
   }
 
   handleCastVote = (option) => {
     const { socket } = this;
-    const { name, roomName } = this.state;
-    socket.emit('cast-vote', { option, name, roomName });
+    const { name, currentRoom } = this.state;
+    socket.emit('cast-vote', { option, name, roomName: currentRoom.name });
   }
 
   handleClickHome() {
-    this.setState({ roomName: null });
+    this.setState({ currentRoom: null });
     history.pushState({}, 'home', '/');
   }
 
@@ -180,100 +182,59 @@ class App extends Component {
 
   handleToggleVoting = () => {
     const { socket } = this;
-    const { name, roomName } = this.state;
-    socket.emit('toggle-voting', { name, roomName });
+    const { name, currentRoom } = this.state;
+    socket.emit('toggle-voting', { name, roomName: currentRoom.name });
   }
 
   handleCloseRoom = () => {
-    const { roomName } = this.state;
+    const { currentRoom } = this.state;
     const { socket } = this;
-    socket.emit('close-room', { roomName: roomName });
+    socket.emit('close-room', { roomName: currentRoom.name });
   }
 
   render() {
     const { admin, name,
-      roomName, votables,
+      currentRoom, votables,
       votingOpen, voteDuration,
-      timeRemaining, users, rooms } = this.state;
-
-    if (admin) {
-      return (<><TopNav itemClicked={this.handleNavClick} users={users} />
-        <Container fluid>
-          <Row>
-            <div className='col-sm-12'>
-              <VotableView socket={this.socket}
-                votingOpen={votingOpen}
-                votables={votables}
-                onVotableDelete={this.handleVotableDelete}
-                onVotableAdded={this.handleVotableAdded}
-                onToggleVoting={this.handleToggleVoting}
-                onSetVoteDuration={this.handleSetVoteDuration}
-                onCloseRoom={this.handleCloseRoom}
-                voteDuration={voteDuration}
-                roomName={roomName} />
-              <button type='button' onClick={this.toggleAdmin} >Finish</button>
-            </div>
-          </Row>
-        </Container></>);
-    } else {
-      if (!name) {
-        return (<>
-          <TopNav itemClicked={this.handleNavClick} users={users} />
-          <Container fluid>
-            <Row>
-              <Col xs={12}>
-                <NameGetter onStart={this.handleOnStart} />
-              </Col>
-            </Row>
-          </Container>
-        </>);
-      }
-      if (!roomName) {
-        return (<>
-          <TopNav itemClicked={this.handleNavClick} users={users} />
-          <Container fluid>
-            <Row>
-              <Col xs={12}>
-                <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms || []} />
-              </Col>
-            </Row>
-          </Container>
-        </>);
-      }
+      timeRemaining, users, rooms, connected } = this.state;
+    if (!connected) {
       return (
-        <>
-          <TopNav itemClicked={this.handleNavClick} users={users} />
-          <Container fluid>
-            <Row>
-              <Col sm={12}>
-                <Badge color="info" onClick={() => { alert('hello') }}>
-                  <span>Voting as </span>
-                  <span><strong>{name}</strong></span>
-                </Badge>
-                &nbsp;
-                <Badge color="warning">
-                  <span>{roomName}</span>
-                </Badge>
-              </Col>
-            </Row>
-            <Row noGutters className='justify-content-center align-items-center'>
-              <Col sm={12}>
-                <div>
-                  <VotingView socket={this.socket}
-                    votables={votables}
-                    votingOpen={votingOpen}
-                    onCastVote={this.handleCastVote}
-                    timeRemaining={timeRemaining}
-                    name={name}
-                    roomName={roomName}
-                    voteDuration={voteDuration}></VotingView>
-                </div>
-              </Col>
-            </Row>
-          </Container>
-        </>
+        <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}></Layout>
       )
     }
+    return (<>
+      <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
+        <If condition={name === null}>
+          <NameGetter onStart={this.handleOnStart} />
+        </If>
+        <If condition={currentRoom === null}>
+          <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms || []} />
+        </If>
+        {admin && currentRoom &&
+          <VotableView socket={this.socket}
+            votingOpen={votingOpen}
+            votables={votables}
+            onVotableDelete={this.handleVotableDelete}
+            onVotableAdded={this.handleVotableAdded}
+            onToggleVoting={this.handleToggleVoting}
+            onSetVoteDuration={this.handleSetVoteDuration}
+            onCloseRoom={this.handleCloseRoom}
+            voteDuration={voteDuration}
+            currentRoom={currentRoom} />
+        }
+        {!admin && name && currentRoom &&
+          <VotingView socket={this.socket}
+            votables={votables}
+            votingOpen={votingOpen}
+            onCastVote={this.handleCastVote}
+            timeRemaining={timeRemaining}
+            name={name}
+            currentRoom={currentRoom.name}
+            voteDuration={voteDuration}></VotingView>
+        }
+      </Layout>
+    </>
+    )
   }
 }
 

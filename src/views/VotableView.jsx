@@ -12,6 +12,7 @@ class VotableView extends Component {
   constructor(props) {
     super(props);
     this.state.socket = props.socket;
+    console.log('votable-view');
   }
 
   handleOnSubmit = (e) => {

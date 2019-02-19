@@ -116,7 +116,7 @@ class Room {
 
   broadcast(action, payload) {
     console.log('broadcast', `room: ${this.name}`, `action: ${action}`, payload);
-    this.io.in(this.name).emit(action, payload);
+    this.io.in(this.slug).emit(action, payload);
   }
 
   serialized() {

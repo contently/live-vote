@@ -6,19 +6,19 @@ import {
 import UsersListDropDown from './UsersListDropDown';
 
 const TopNav = (props) => {
-  const { itemClicked, users } = props;
+  const { itemClicked, currentRoom } = props;
   return (
     <Navbar color="light" light expand="md" sticky="top">
       <NavbarBrand onClick={() => { itemClicked('/'); }} style={{ cursor: 'pointer' }}>
         Live-Vote
       </NavbarBrand>
       <Nav>
-        <UsersListDropDown users={users} />
+        <UsersListDropDown users={currentRoom ? currentRoom.users : []} />
         <NavItem style={{ marginRight: '10px' }}>
           <Button type="button" name="admin" onClick={() => { itemClicked('/'); }}>Rooms</Button>
         </NavItem>
         <NavItem>
-          <Button type="button" name="admin" onClick={() => { itemClicked('admin'); }}>Admin</Button>
+          <Button type="button" name="admin" onClick={() => { itemClicked('admin'); }} disabled={!currentRoom}>Admin</Button>
         </NavItem>
       </Nav>
     </Navbar>
@@ -27,7 +27,8 @@ const TopNav = (props) => {
 
 TopNav.propTypes = {
   itemClicked: PropTypes.func.isRequired,
-  users: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
+  currentRoom: PropTypes.shape({ name: PropTypes.string }).isRequired,
+//  users: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
 };
 
 export default TopNav;

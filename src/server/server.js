@@ -49,44 +49,47 @@ io.on('connection', (socket) => {
 
   socket.on('create-votable', (payload) => {
     // TODO: Capture who did this
-    const { roomName, option } = payload;
-    const lowerRoomName = roomName.toLowerCase();
-    if (!state.rooms[lowerRoomName]) return;
-    state.rooms[lowerRoomName].addVotable(option);
+    const { roomName, option, route } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) return;
+    state.rooms[slug].addVotable(option);
   });
 
   socket.on('delete-votable', (payload) => {
     // TODO: Capture who did this
     console.log('delete-votable', payload);
-    const { roomName, option } = payload;
-    const lowerRoomName = roomName.toLowerCase();
-    if (!state.rooms[lowerRoomName]) return;
-    state.rooms[lowerRoomName].removeVotable(option);
+    const { roomName, option, route } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) return;
+    state.rooms[slug].removeVotable(option);
   });
 
   socket.on('set-vote-duration', (payload) => {
     // TODO: Capture who did this
     console.log('set-vote-duration', payload);
     const { roomName, voteDuration } = payload;
-    const lowerRoomName = roomName.toLowerCase();
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
 
-    if (!state.rooms[lowerRoomName]) return;
-    state.rooms[lowerRoomName].setVoteDuration(voteDuration);
+    if (!state.rooms[slug]) return;
+    state.rooms[slug].setVoteDuration(voteDuration);
   });
 
   socket.on('toggle-voting', (payload) => {
     console.log('toggle-voting', payload);
-    const { roomName } = payload;
-    const lowerRoomName = roomName.toLowerCase();
-    if (!state.rooms[lowerRoomName]) return;
-    state.rooms[lowerRoomName].toggleVoting();
+    const { roomName, route } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) return;
+    state.rooms[slug].toggleVoting();
   });
 
   socket.on('cast-vote', (payload) => {
-    const { option, name, roomName } = payload;
-    const lowerRoomName = roomName.toLowerCase();
-    if (!state.rooms[lowerRoomName]) return;
-    state.rooms[lowerRoomName].castVote(name, option);
+    const {
+      option, name,
+      roomName, route
+    } = payload;
+    const slug = roomName ? Room.nameToSlug(roomName) : route;
+    if (!state.rooms[slug]) return;
+    state.rooms[slug].castVote(name, option);
   });
 
   socket.on('list-rooms', () => {
