@@ -4,7 +4,7 @@ class Room {
     return name.toLowerCase().trim().replace(/([^a-zA-Z0-9])/g, '-').replace(/(-{2})/g, '-');
   }
 
-  constructor(name, socketIo) {
+  constructor(name, socketIo, persistence) {
     this.name = name;
     this.io = socketIo;
     this.votables = [];
@@ -13,7 +13,9 @@ class Room {
     this.voteDuration = (33 * 4);
     this.votingEnds = 0;
     this.votingInterval = null;
+    this.soundEnabled = false;
     this.slug = Room.nameToSlug(name);
+    this.persistence = persistence;
   }
 
   addUser(name, socket) {
@@ -24,6 +26,7 @@ class Room {
     }
     user.status = 'online';
     user.socket = socket;
+    this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} joined ${this.name}`, type: 'success' } });
   }
 
@@ -34,6 +37,7 @@ class Room {
       }
       return u;
     });
+    this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} left  ${this.name}`, type: 'warn' } });
   }
 
@@ -45,11 +49,13 @@ class Room {
   addVotable(name) {
     if (this.votables.find(v => v.name === name)) return;
     this.votables.push({ name, votes: [] });
+    this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized() });
   }
 
   removeVotable(name) {
     this.votables = this.votables.filter(v => v.name !== name);
+    this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized() });
   }
 
@@ -60,6 +66,7 @@ class Room {
     } else {
       this.voteDuration = duration;
     }
+    this.updateRoom();
     return this.broadcast('room-updated', { room: this.serialized() });
   }
 
@@ -75,6 +82,7 @@ class Room {
       }
       return votesCopy;
     });
+    this.updateRoom();
     return this.broadcast('room-updated', { room: this.serialized() });
   }
 
@@ -82,11 +90,19 @@ class Room {
     this.votingOpen = !this.votingOpen;
     if (this.votingOpen) {
       this.startTimer();
+      this.updateRoom();
       this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} voting opened`, type: 'success' } });
     } else {
       this.stopTimer();
+      this.updateRoom();
       this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} voting ended`, type: 'warn' } });
     }
+  }
+
+  toggleSound() {
+    this.soundEnabled = !this.soundEnabled;
+    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} sound toggled`, type: 'success' } });
+    this.updateRoom();
   }
 
   startTimer() {
@@ -96,6 +112,9 @@ class Room {
     this.votingInterval = setInterval(() => {
       const remaining = this.voteTimeRemaining() > 0 ? this.voteTimeRemaining() : 0;
       this.broadcast('vote-time-remaining', { roomName: this.name, remaining });
+      if (Math.floor(this.voteTimeRemaining()) % 3 === 0) {
+        this.persistChanges();
+      }
       if (this.voteTimeRemaining() < 0) {
         this.toggleVoting();
       }
@@ -126,9 +145,24 @@ class Room {
     this.broadcast('room-closed', { room: this.serialized() });
   }
 
+  updateRoom() {
+    this.persistChanges();
+  }
+
+  async persistChanges() {
+    this.persistence.persist(`rooms/${this.slug}/data`, this.serialized());
+  }
+
+  async loadFromPersistence() {
+    const data = await this.persistence.load(`rooms/${this.slug}/data`);
+    console.log(this.serialized());
+    Object.assign(this, data);
+    console.log(this.serialized());
+  }
+
   serialized() {
     const {
-      users, votables, votingOpen, votingEnds, voteDuration, name, slug
+      users, votables, votingOpen, votingEnds, voteDuration, name, slug, soundEnabled
     } = this;
     return {
       users: users.map(u => ({ name: u.name, status: u.status })),
@@ -138,6 +172,7 @@ class Room {
       voteDuration,
       name,
       slug,
+      soundEnabled,
       timeRemaining: this.voteTimeRemaining()
     };
   }

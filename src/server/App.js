@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
+const redis = require('redis');
 const Room = require('./Room');
-
+const Persistence = require('./Persistence');
 /**
  * Protocol:
  *
@@ -15,10 +16,15 @@ class App {
     this.state = {
       rooms: {}
     };
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    console.log('Persisting to', redisUrl);
+    this.client = redis.createClient(redisUrl);
+    this.persistence = new Persistence(this.client, 'live-vote');
   }
 
   start() {
     this.wireHandlers();
+    this.loadRooms();
   }
 
   // Wired Handlers
@@ -48,8 +54,18 @@ class App {
 
   createRoom(roomName, route, io) {
     const slug = roomName ? Room.nameToSlug(roomName) : route;
-    this.state.rooms[slug] = new Room(roomName, io);
+    this.state.rooms[slug] = new Room(roomName, io, this.persistence);
     io.emit('all-rooms', (Object.keys(this.state.rooms).map(r => this.state.rooms[r].serialized())));
+    return this.state.rooms[slug];
+  }
+
+  async loadRooms() {
+    const rooms = await this.persistence.loadAll('rooms/*');
+    await rooms.forEach(async (room) => {
+      const newRoom = this.createRoom(room.name, room.slug, this.io);
+      await newRoom.loadFromPersistence();
+    });
+    this.io.emit('all-rooms', this.serializedRooms());
   }
 
   wireHandlers() {
@@ -117,6 +133,13 @@ class App {
         const slug = roomName ? Room.nameToSlug(roomName) : route;
         if (!this.state.rooms[slug]) return;
         this.state.rooms[slug].toggleVoting();
+      });
+
+      socket.on('toggle-sound', (payload) => {
+        const { roomName, route } = payload;
+        const slug = roomName ? Room.nameToSlug(roomName) : route;
+        if (!this.state.rooms[slug]) return;
+        this.state.rooms[slug].toggleSound();
       });
 
       socket.on('cast-vote', (payload) => {

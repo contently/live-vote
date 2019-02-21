@@ -5,6 +5,7 @@ import socketIOClient from 'socket.io-client';
 import cogoToast from 'cogo-toast';
 import cookies from 'browser-cookies';
 import { Spinner } from 'reactstrap';
+import Sound from 'react-sound';
 import VotableView from './views/VotableView';
 import VotingView from './views/VotingView';
 import NameGetter from './components/NameGetter';
@@ -14,6 +15,7 @@ import './App.css';
 import RoomGetter from './components/RoomGetter';
 // import If from './components/If';
 import UserRoomStatus from './components/UserRoomStatus';
+import mp3 from './Jeopardy-theme-song.mp3';
 
 // Local vs. Prod websockets url hack
 let host = window.location.origin.replace(/^http/, 'ws');
@@ -40,7 +42,6 @@ class App extends Component {
     this.socket = socketIOClient(host);
 
     this.socket.on('room-updated', data => {
-      console.log('room-updated', data);
       const { room, message } = data;
       this.updateRoom(room);
       if (message) {
@@ -79,7 +80,6 @@ class App extends Component {
 
     this.socket.on('room-closed', (room) => {
       const currentRoom = this.currentRoom();
-      console.log('room-closed', room);
       if (!currentRoom) return;
       if (room.name === currentRoom.name) {
         this.handleNavClick('/');
@@ -87,7 +87,6 @@ class App extends Component {
     });
 
     this.socket.on('all-rooms', (rooms) => {
-      console.log('all-rooms', rooms);
       const currentRoom = this.currentRoom();
       this.setState({ rooms });
       if (currentRoom && !rooms.find(n => n.name === currentRoom.name)) {
@@ -134,10 +133,8 @@ class App extends Component {
   }
 
   indexOfRoomByName(name) {
-    console.log('index of room by name', name);
     const { rooms } = this.state;
     for (let x = 0; x < rooms.length; x += 1) {
-      console.log(rooms[x].name, name);
       if (rooms[x].name === name) {
         return x;
       }
@@ -159,7 +156,6 @@ class App extends Component {
 
   handleRoomJoined(room) {
     const localRoom = this.indexOfRoomByName(room.name);
-    console.log('local room', localRoom);
     if (localRoom >= 0) {
       this.setState({
         currentRoomIndex: localRoom
@@ -195,7 +191,8 @@ class App extends Component {
 
   handleVotableDelete = (option) => {
     const { socket } = this;
-    const { currentRoom, name } = this.state;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
     socket.emit('delete-votable', { option, roomName: currentRoom.name, name });
   }
 
@@ -240,10 +237,24 @@ class App extends Component {
     socket.emit('toggle-voting', { name, roomName: currentRoom.name });
   }
 
+  handleToggleSound = () => {
+    const { socket } = this;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
+    socket.emit('toggle-sound', { name, roomName: currentRoom.name });
+  }
+
   handleCloseRoom = () => {
     const { socket } = this;
     const currentRoom = this.currentRoom();
     socket.emit('close-room', { roomName: currentRoom.name });
+  }
+
+  soundStatus = () => {
+    const currentRoom = this.currentRoom();
+    if (!currentRoom) return Sound.status.STOPPED;
+    const { votingOpen, soundEnabled } = currentRoom;
+    return votingOpen && soundEnabled ? Sound.status.PLAYING : Sound.status.STOPPED;
   }
 
   render() {
@@ -278,16 +289,22 @@ class App extends Component {
       );
     }
 
-    const { votables, votingOpen, voteDuration } = currentRoom;
+    const { votables, votingOpen, voteDuration, soundEnabled } = currentRoom;
     if (admin) {
       return (
         <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
+          <Sound
+            url={mp3}
+            playStatus={this.soundStatus()}
+          />
           <VotableView socket={this.socket}
             votingOpen={votingOpen}
+            soundEnabled={soundEnabled}
             votables={votables}
             onVotableDelete={this.handleVotableDelete}
             onVotableAdded={this.handleVotableAdded}
             onToggleVoting={this.handleToggleVoting}
+            onToggleSound={this.handleToggleSound}
             onSetVoteDuration={this.handleSetVoteDuration}
             onCloseRoom={this.handleCloseRoom}
             voteDuration={voteDuration}
@@ -298,6 +315,10 @@ class App extends Component {
 
     return (<>
       <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
+        <Sound
+          url={mp3}
+          playStatus={this.soundStatus()}
+        />
         {!admin && name && currentRoom &&
           <>
             <UserRoomStatus user={name} currentRoom={currentRoom} />

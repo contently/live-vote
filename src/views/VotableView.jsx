@@ -55,14 +55,27 @@ class VotableView extends Component {
     onToggleVoting();
   }
 
+  toggleSound = () => {
+    const { onToggleSound } = this.props;
+    onToggleSound();
+  }
+
   render() {
     const { name } = this.state;
-    const { votables, votingOpen, voteDuration } = this.props;
+    const {
+      votables,
+      votingOpen,
+      voteDuration,
+      soundEnabled
+    } = this.props;
+
     return (
       <Form onSubmit={this.handleOnSubmit}>
         <h4>Voting</h4>
         {votingOpen ? <Button type="button" onClick={this.toggleVoting} color="danger">Close Voting</Button>
           : <Button type="button" onClick={this.toggleVoting} color="success" disabled={!(votables.length > 1)}>Open Voting</Button>}
+        {soundEnabled ? <Button type="button" onClick={this.toggleSound} color="danger">Turn Sound Off</Button>
+          : <Button type="button" onClick={this.toggleSound} color="success">Turn Sound On</Button>}
         <h4>Settings</h4>
         <ConfirmButton name="close-room" color="warning" cancelColor="none" confirmText="Sure?" onClick={this.handleCloseRoom}>Close Room</ConfirmButton>
         <FormGroup disabled={votingOpen}>
@@ -94,11 +107,13 @@ VotableView.propTypes = {
   onVotableAdded: PropTypes.func.isRequired,
   onVotableDelete: PropTypes.func.isRequired,
   onToggleVoting: PropTypes.func.isRequired,
+  onToggleSound: PropTypes.func.isRequired,
   onSetVoteDuration: PropTypes.func.isRequired,
   onCloseRoom: PropTypes.func.isRequired,
   votables: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired,
   votingOpen: PropTypes.bool.isRequired,
   voteDuration: PropTypes.number.isRequired,
+  soundEnabled: PropTypes.bool.isRequired,
   /* eslint-disable-next-line */
   socket: PropTypes.object.isRequired
 };

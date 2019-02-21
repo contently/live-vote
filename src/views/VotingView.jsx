@@ -7,7 +7,6 @@ import {
 import CardBody from 'reactstrap/lib/CardBody';
 import Sound from 'react-sound';
 import Badge from 'reactstrap/lib/Badge';
-import mp3 from '../Jeopardy-theme-song.mp3';
 
 class VotingView extends Component {
   onVote = (name) => {
@@ -25,8 +24,8 @@ class VotingView extends Component {
   }
 
   soundStatus = () => {
-    const { votingOpen } = this.props;
-    return votingOpen ? Sound.status.PLAYING : Sound.status.STOPPED;
+    const { votingOpen, soundEnabled } = this.props;
+    return votingOpen && soundEnabled ? Sound.status.PLAYING : Sound.status.STOPPED;
   }
 
   progressColor = (val, max) => {
@@ -46,10 +45,6 @@ class VotingView extends Component {
     } = this.props;
     return (
       <div>
-        <Sound
-          url={mp3}
-          playStatus={this.soundStatus()}
-        />
         <Row>
           <Col sm={12}>
             <h4>Time Remaining</h4>
@@ -96,6 +91,10 @@ class VotingView extends Component {
   }
 }
 
+VotingView.defaultProps = {
+  soundEnabled: false
+};
+
 VotingView.propTypes = {
   /* eslint-disable-next-line */
   socket: PropTypes.object.isRequired,
@@ -104,7 +103,8 @@ VotingView.propTypes = {
   votingOpen: PropTypes.bool.isRequired,
   timeRemaining: PropTypes.number.isRequired,
   name: PropTypes.string.isRequired,
-  voteDuration: PropTypes.number.isRequired
+  voteDuration: PropTypes.number.isRequired,
+  soundEnabled: PropTypes.bool
   // roomName: PropTypes.string.isRequired
 };
 
