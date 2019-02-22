@@ -12,6 +12,7 @@ class ConfirmButton extends Component {
     const { onClick, name } = this.props;
     if (confirm) {
       onClick(name);
+      this.setState({ confirm: !confirm });
     } else {
       this.setState({ confirm: !confirm });
     }
@@ -25,12 +26,19 @@ class ConfirmButton extends Component {
       name,
       color,
       confirmColor,
-      cancelColor
+      cancelColor,
+      disabled
     } = this.props;
     const { confirm } = this.state;
     return (
       <>
-        <Button name={name} type="button" color={confirm ? confirmColor : color} onClick={this.handleClick}>
+        <Button
+          name={name}
+          type="button"
+          color={confirm ? confirmColor : color}
+          onClick={this.handleClick}
+          disabled={disabled}
+        >
           {confirm ? confirmText : children}
         </Button>
         {confirm ? (
@@ -46,7 +54,8 @@ ConfirmButton.defaultProps = {
   confirmText: 'Are you sure?',
   color: 'primary',
   confirmColor: 'danger',
-  cancelColor: 'secondary'
+  cancelColor: 'secondary',
+  disabled: false
 };
 
 ConfirmButton.propTypes = {
@@ -60,7 +69,8 @@ ConfirmButton.propTypes = {
   color: PropTypes.string,
   confirmColor: PropTypes.string,
   cancelColor: PropTypes.string,
-  onClick: PropTypes.func.isRequired
+  onClick: PropTypes.func.isRequired,
+  disabled: PropTypes.bool
 };
 
 export default ConfirmButton;

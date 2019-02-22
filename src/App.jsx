@@ -68,7 +68,7 @@ class App extends Component {
     });
 
     this.socket.on('server-error', ({ message, code }) => {
-      cogoToast.error(message);
+      cogoToast.error(message.content);
       if (code == 404) {
         this.handleNavClick('/');
       }
@@ -180,6 +180,13 @@ class App extends Component {
 
   toggleAdmin = () => {
     this.setState({ admin: !this.state.admin });
+  }
+
+  handleNewRound = () => {
+    const { socket } = this;
+    const { name } = this.state;
+    const currentRoom = this.currentRoom();
+    socket.emit('new-round', { name, roomName: currentRoom.name });
   }
 
   handleVotableAdded = (option) => {
@@ -301,6 +308,7 @@ class App extends Component {
             votingOpen={votingOpen}
             soundEnabled={soundEnabled}
             votables={votables}
+            onNewRound={this.handleNewRound}
             onVotableDelete={this.handleVotableDelete}
             onVotableAdded={this.handleVotableAdded}
             onToggleVoting={this.handleToggleVoting}

@@ -45,6 +45,11 @@ class VotableView extends Component {
     onCloseRoom();
   }
 
+  handleNewRound = () => {
+    const { onNewRound } = this.props;
+    onNewRound();
+  }
+
   deleteItem = (name) => {
     const { onVotableDelete } = this.props;
     onVotableDelete(name);
@@ -58,6 +63,11 @@ class VotableView extends Component {
   toggleSound = () => {
     const { onToggleSound } = this.props;
     onToggleSound();
+  }
+
+  newRoundEnabled = () => {
+    const { votables } = this.props;
+    return votables.length > 1 && votables.find(v => v.votes.length > 0);
   }
 
   render() {
@@ -76,6 +86,7 @@ class VotableView extends Component {
           : <Button type="button" onClick={this.toggleVoting} color="success" disabled={!(votables.length > 1)}>Open Voting</Button>}
         {soundEnabled ? <Button type="button" onClick={this.toggleSound} color="danger">Turn Sound Off</Button>
           : <Button type="button" onClick={this.toggleSound} color="success">Turn Sound On</Button>}
+        <ConfirmButton type="button" onClick={this.handleNewRound} color="warning" disabled={!this.newRoundEnabled()}>New Voting Round</ConfirmButton>
         <h4>Settings</h4>
         <ConfirmButton name="close-room" color="warning" cancelColor="none" confirmText="Sure?" onClick={this.handleCloseRoom}>Close Room</ConfirmButton>
         <FormGroup disabled={votingOpen}>
@@ -104,6 +115,7 @@ class VotableView extends Component {
 }
 
 VotableView.propTypes = {
+  onNewRound: PropTypes.func.isRequired,
   onVotableAdded: PropTypes.func.isRequired,
   onVotableDelete: PropTypes.func.isRequired,
   onToggleVoting: PropTypes.func.isRequired,

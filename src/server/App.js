@@ -49,7 +49,12 @@ class App {
   // Helpers
   serializedRooms() {
     const { rooms } = this.state;
-    return Object.keys(rooms).map(r => rooms[r].serialized());
+    return Object.keys(rooms).map(r => rooms[r].serialized()).reduce((all, curr) => {
+      if (curr.state !== 'open') {
+        return all;
+      }
+      return [...all, curr];
+    }, []);
   }
 
   createRoom(roomName, route, io) {
@@ -98,6 +103,14 @@ class App {
         this.state.rooms[slug].dispose();
         delete this.state.rooms[slug];
         io.emit('all-rooms', (Object.keys(this.state.rooms).map(r => this.state.rooms[r].serialized())));
+      });
+
+      socket.on('new-round', (payload) => {
+        // TODO: Capture who did this
+        const { roomName, route } = payload;
+        const slug = roomName ? Room.nameToSlug(roomName) : route;
+        if (!this.state.rooms[slug]) return;
+        this.state.rooms[slug].newRound(1);
       });
 
       socket.on('create-votable', (payload) => {

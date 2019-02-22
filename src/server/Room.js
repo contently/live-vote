@@ -16,6 +16,8 @@ class Room {
     this.soundEnabled = false;
     this.slug = Room.nameToSlug(name);
     this.persistence = persistence;
+    this.rounds = [];
+    this.state = 'open';
   }
 
   addUser(name, socket) {
@@ -28,6 +30,39 @@ class Room {
     user.socket = socket;
     this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} joined ${this.name}`, type: 'success' } });
+  }
+
+  newRound(minVotes = 1) {
+    let error = null;
+    if (this.votables.length === 0) {
+      error = 'No options configured. No rounds are possible';
+    }
+    if (this.votables.length === 1) {
+      error = 'Only one option remains. No rounds are possible';
+    }
+    if (error) {
+      this.broadcast('server-error', { message: { content: error } });
+      return;
+    }
+
+    this.rounds.push({
+      roundNumber: this.rounds.length,
+      votables: this.votables.map(f => ({ ...f }))
+    });
+
+    const remaining = this.votables.filter(v => v.votes.length >= minVotes);
+    if (remaining.length === 0) {
+      this.broadcast('server-error', { message: { content: 'No votes cast. No additional rounds possible.' } });
+      return;
+    }
+    this.votables = remaining;
+    this.votingOpen = false;
+    this.stopTimer();
+    this.broadcast('room-updated', {
+      room: this.serialized(),
+      message: { content: `Voting in ${this.name} in a new round`, type: 'success' }
+    });
+    this.persistChanges();
   }
 
   removeUser(name) {
@@ -106,6 +141,7 @@ class Room {
   }
 
   startTimer() {
+    this.votingOpen = true;
     this.votingEnds = new Date().setSeconds(
       new Date().getSeconds() + this.voteDuration
     );
@@ -113,7 +149,7 @@ class Room {
       const remaining = this.voteTimeRemaining() > 0 ? this.voteTimeRemaining() : 0;
       this.broadcast('vote-time-remaining', { roomName: this.name, remaining });
       if (Math.floor(this.voteTimeRemaining()) % 3 === 0) {
-        this.persistChanges();
+        this.updateRoom();
       }
       if (this.voteTimeRemaining() < 0) {
         this.toggleVoting();
@@ -123,6 +159,8 @@ class Room {
 
   stopTimer() {
     clearInterval(this.votingInterval);
+    this.votingOpen = false;
+    this.timeRemaining = 0;
     this.sendError('voting ended');
   }
 
@@ -141,6 +179,8 @@ class Room {
 
   dispose() {
     console.log('dispose', this.name);
+    this.state = 'closed';
+    this.updateRoom();
     this.stopTimer();
     this.broadcast('room-closed', { room: this.serialized() });
   }
@@ -162,7 +202,16 @@ class Room {
 
   serialized() {
     const {
-      users, votables, votingOpen, votingEnds, voteDuration, name, slug, soundEnabled
+      users,
+      votables,
+      votingOpen,
+      votingEnds,
+      voteDuration,
+      name,
+      slug,
+      soundEnabled,
+      rounds,
+      state
     } = this;
     return {
       users: users.map(u => ({ name: u.name, status: u.status })),
@@ -173,7 +222,9 @@ class Room {
       name,
       slug,
       soundEnabled,
-      timeRemaining: this.voteTimeRemaining()
+      timeRemaining: this.voteTimeRemaining(),
+      rounds,
+      state
     };
   }
 }
