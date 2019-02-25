@@ -6,7 +6,7 @@ import {
 import UsersListDropDown from './UsersListDropDown';
 
 const TopNav = (props) => {
-  const { itemClicked, currentRoom } = props;
+  const { itemClicked, currentRoom, showOptions } = props;
   return (
     <Navbar color="light" light expand="md" sticky="top">
       <NavbarBrand onClick={() => { itemClicked('/'); }} style={{ cursor: 'pointer' }}>
@@ -15,16 +15,17 @@ const TopNav = (props) => {
       <Nav>
         <UsersListDropDown users={currentRoom ? currentRoom.users : []} />
         <NavItem style={{ marginRight: '10px' }}>
-          <Button type="button" name="admin" onClick={() => { itemClicked('/'); }}>Rooms</Button>
+          <Button type="button" name="rooms" onClick={() => { itemClicked('/'); }}>Rooms</Button>
         </NavItem>
         <NavItem>
           <Button
             type="button"
-            name="admin"
-            onClick={() => { itemClicked('admin'); }}
+            name="showOptions"
+            color={showOptions ? 'primary' : 'secondary'}
+            onClick={() => { itemClicked('showOptions'); }}
             disabled={!currentRoom || currentRoom.name === 'Loading'}
           >
-            Admin
+            Room Options
           </Button>
         </NavItem>
       </Nav>
@@ -35,6 +36,7 @@ const TopNav = (props) => {
 TopNav.propTypes = {
   itemClicked: PropTypes.func.isRequired,
   currentRoom: PropTypes.shape({ name: PropTypes.string }).isRequired,
+  showOptions: PropTypes.bool.isRequired
   //  users: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired
 };
 

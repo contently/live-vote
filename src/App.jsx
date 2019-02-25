@@ -28,7 +28,7 @@ if (host.includes('localhost')) {
 @observer
 class App extends Component {
   state = {
-    admin: false,
+    showOptions: false,
     name: null,
     currentRoomIndex: -1,
     users: [],
@@ -178,8 +178,8 @@ class App extends Component {
     this.socket.emit('join-room', { roomName, route, userName: name });
   }
 
-  toggleAdmin = () => {
-    this.setState({ admin: !this.state.admin });
+  toggleshowOptions = () => {
+    this.setState({ showOptions: !this.state.showOptions });
   }
 
   handleNewRound = () => {
@@ -224,8 +224,8 @@ class App extends Component {
 
   handleNavClick = (which) => {
     switch (which) {
-      case 'admin':
-        this.toggleAdmin();
+      case 'showOptions':
+        this.toggleshowOptions();
         break;
       case 'rooms':
         this.handleClickHome();
@@ -265,13 +265,13 @@ class App extends Component {
   }
 
   render() {
-    const { admin,
+    const { showOptions,
       name,
       rooms, connected } = this.state;
 
     if (!connected) {
       return (
-        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick} showOptions={showOptions}>
           <Spinner color='primary'>Hold tight</Spinner>
         </Layout>
       )
@@ -279,7 +279,7 @@ class App extends Component {
 
     if (!name) {
       return (
-        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick} showOptions={showOptions}>
           <NameGetter onStart={this.handleOnStart} />
         </Layout>
       );
@@ -289,7 +289,7 @@ class App extends Component {
 
     if (!currentRoom) {
       return (
-        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick}>
+        <Layout currentRoom={{ name: 'Loading', users: [] }} onNavClick={this.handleNavClick} showOptions={showOptions}>
           <h4>Join / Create Room</h4>
           <RoomGetter onStart={this.handleOnStartRoom} rooms={rooms || []} />
         </Layout>
@@ -297,9 +297,9 @@ class App extends Component {
     }
 
     const { votables, votingOpen, voteDuration, soundEnabled } = currentRoom;
-    if (admin) {
+    if (showOptions) {
       return (
-        <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
+        <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick} showOptions={showOptions}>
           <Sound
             url={mp3}
             playStatus={this.soundStatus()}
@@ -322,12 +322,12 @@ class App extends Component {
     }
 
     return (<>
-      <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick}>
+      <Layout currentRoom={currentRoom} onNavClick={this.handleNavClick} showOptions={showOptions}>
         <Sound
           url={mp3}
           playStatus={this.soundStatus()}
         />
-        {!admin && name && currentRoom &&
+        {!showOptions && name && currentRoom &&
           <>
             <UserRoomStatus user={name} currentRoom={currentRoom} />
             <VotingView socket={this.socket}

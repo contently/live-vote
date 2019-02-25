@@ -6,7 +6,9 @@ import {
 import TopNav from '../components/TopNav';
 
 const Layout = (props) => {
-  const { currentRoom, children, onNavClick } = props;
+  const {
+    currentRoom, children, onNavClick, showOptions
+  } = props;
   const handleNavClick = (item) => {
     onNavClick(item);
   };
@@ -17,6 +19,7 @@ const Layout = (props) => {
         itemClicked={handleNavClick}
         currentRoom={currentRoom}
         users={currentRoom ? currentRoom.users : []}
+        showOptions={showOptions}
       />
       <Container fluid>
         <Row>
@@ -35,7 +38,8 @@ Layout.propTypes = {
     PropTypes.node
   ]).isRequired,
   currentRoom: PropTypes.shape({ name: PropTypes.string }).isRequired,
-  onNavClick: PropTypes.func.isRequired
+  onNavClick: PropTypes.func.isRequired,
+  showOptions: PropTypes.bool.isRequired
 };
 
 export default Layout;
