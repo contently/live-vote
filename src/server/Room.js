@@ -70,12 +70,13 @@ class Room {
   }
 
   removeUser(name) {
-    this.users = this.users.map((u) => {
+    this.users = this.users.reduce((all, u) => {
+      if (!u || !u.name) return all;
       if (u.name.toLowerCase() === name.toLowerCase()) {
         return { ...u, status: 'offline' };
       }
       return u;
-    });
+    }, []);
     this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} left  ${this.name}`, type: 'warn' } });
   }
@@ -150,16 +151,22 @@ class Room {
     this.votingEnds = new Date().setSeconds(
       new Date().getSeconds() + this.voteDuration
     );
+    this.updateRoom();
     this.votingInterval = setInterval(() => {
       const remaining = this.voteTimeRemaining() > 0 ? this.voteTimeRemaining() : 0;
-      this.broadcast('vote-time-remaining', { roomName: this.name, remaining });
+      // Update client every 10 seconds
+      if (Math.floor(this.voteTimeRemaining()) % 10 === 0) {
+        this.broadcast('vote-time-remaining', { roomName: this.name, remaining });
+      }
+      // Persiste data ever 3 seconds
       if (Math.floor(this.voteTimeRemaining()) % 3 === 0) {
         this.updateRoom();
       }
+      // End voting when over
       if (this.voteTimeRemaining() < 0) {
         this.toggleVoting();
       }
-    }, 120);
+    }, 1000);
   }
 
   stopTimer() {

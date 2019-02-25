@@ -332,6 +332,7 @@ class App extends Component {
             <UserRoomStatus user={name} currentRoom={currentRoom} />
             <VotingView socket={this.socket}
               votables={currentRoom.votables}
+              votingEnds={currentRoom.votingEnds}
               votingOpen={currentRoom.votingOpen}
               onCastVote={this.handleCastVote}
               timeRemaining={currentRoom.timeRemaining || currentRoom.voteDuration}

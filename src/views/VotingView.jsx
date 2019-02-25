@@ -9,6 +9,47 @@ import Sound from 'react-sound';
 import Badge from 'reactstrap/lib/Badge';
 
 class VotingView extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      timeRemaining: -1,
+      votingInterval: null
+    };
+  }
+
+  componentDidMount() {
+    this.startInterval();
+  }
+
+  componentDidUpdate() {
+    console.log('cdu', this.state);;
+    const { votingOpen } = this.props;
+    const { votingInterval } = this.state;
+    if (votingOpen) {
+      this.startInterval();
+    } else if (votingInterval) {
+      clearInterval(votingInterval);
+    }
+  }
+
+  startInterval = () => {
+    const { votingInterval } = this.state;
+    if (votingInterval) {
+      return;
+    }
+
+    const newInterval = setInterval(() => {
+      console.log('interval');
+      const { votingOpen } = this.props;
+      if (!votingOpen) return;
+      const { votingEnds } = this.props;
+      const timeRemaining = (new Date(votingEnds) - new Date()) / 1000;
+      console.log('tick', timeRemaining);
+      this.setState({ timeRemaining });
+    }, 300);
+    this.setState({ votingInterval: newInterval });
+  }
+
   onVote = (name) => {
     const { onCastVote } = this.props;
     onCastVote(name);
@@ -35,14 +76,15 @@ class VotingView extends Component {
     return 'danger';
   }
 
+
   render() {
     const {
       votables,
       votingOpen,
-      timeRemaining,
       name,
       voteDuration
     } = this.props;
+    const { timeRemaining } = this.state;
     return (
       <div>
         <Row>
@@ -101,10 +143,10 @@ VotingView.propTypes = {
   onCastVote: PropTypes.func.isRequired,
   votables: PropTypes.arrayOf(PropTypes.shape({ name: PropTypes.string })).isRequired,
   votingOpen: PropTypes.bool.isRequired,
-  timeRemaining: PropTypes.number.isRequired,
   name: PropTypes.string.isRequired,
   voteDuration: PropTypes.number.isRequired,
-  soundEnabled: PropTypes.bool
+  soundEnabled: PropTypes.bool,
+  votingEnds: PropTypes.instanceOf(Date).isRequired
   // roomName: PropTypes.string.isRequired
 };
 
