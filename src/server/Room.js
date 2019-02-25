@@ -20,18 +20,6 @@ class Room {
     this.state = 'open';
   }
 
-  addUser(name, socket) {
-    let user = this.users.find(u => u.name === name);
-    if (!user) {
-      user = { name, socket, status: 'online' };
-      this.users.push(user);
-    }
-    user.status = 'online';
-    user.socket = socket;
-    this.updateRoom();
-    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} joined ${this.name}`, type: 'success' } });
-  }
-
   newRound(minVotes = 1) {
     let error = null;
     if (this.votables.length === 0) {
@@ -63,6 +51,22 @@ class Room {
       message: { content: `Voting in ${this.name} in a new round`, type: 'success' }
     });
     this.persistChanges();
+  }
+
+  addUser(name, socket) {
+    const lowerName = name.toLowerCase().trim();
+    console.log('lowerName', lowerName.length);
+    if (lowerName.length === 0) return socket.emit('server-error', { message: { content: 'User name cannot be blank' } });
+    let user = this.users.find(u => u.name === lowerName);
+    if (!user) {
+      user = { lowerName, socket, status: 'online' };
+      this.users.push(user);
+    }
+    user.status = 'online';
+    user.socket = socket;
+    this.updateRoom();
+    socket.emit('room-joined', this.serialized());
+    return this.broadcast('room-updated', { room: this.serialized(), message: { content: `${lowerName} joined ${this.name}`, type: 'success' } });
   }
 
   removeUser(name) {
@@ -108,12 +112,13 @@ class Room {
   castVote(name, option) {
     const votable = this.votables.find(f => f.name === option);
     if (!votable) return this.sendError('Invalid option');
-
+    const lowerName = name.toLowerCase().trim();
+    if (lowerName.length > 0) return null;
     this.votables = this.votables.map((v) => {
       const votesCopy = { ...v };
-      votesCopy.votes = v.votes.filter(vv => vv !== name);
+      votesCopy.votes = v.votes.filter(vv => vv !== lowerName);
       if (v.name === option) {
-        votesCopy.votes.push(name);
+        votesCopy.votes.push(lowerName);
       }
       return votesCopy;
     });

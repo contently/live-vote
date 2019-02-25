@@ -91,7 +91,6 @@ class App {
         if (this.state.rooms[slug]) {
           socket.join(slug);
           this.state.rooms[slug].addUser(userName, socket);
-          socket.emit('room-joined', this.state.rooms[slug].serialized());
           io.emit('room-updated', { room: this.state.rooms[slug].serialized() });
         }
       });

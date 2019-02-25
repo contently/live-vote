@@ -26,6 +26,7 @@ class NameGetter extends Component {
   };
 
   render() {
+    const { name } = this.state;
     return (
       <Form onSubmit={this.handleOnSubmit}>
         <FormGroup>
@@ -35,7 +36,7 @@ class NameGetter extends Component {
           </Label>
         </FormGroup>
         <FormGroup>
-          <Button type="submit" color="primary">Start</Button>
+          <Button type="submit" color="primary" disabled={name.trim().length === 0}>Start</Button>
         </FormGroup>
       </Form>
     );
