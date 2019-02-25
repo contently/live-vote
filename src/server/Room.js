@@ -71,7 +71,7 @@ class Room {
 
   removeUser(name) {
     this.users = this.users.map((u) => {
-      if (u.name === name) {
+      if (u.name.toLowerCase() === name.toLowerCase()) {
         return { ...u, status: 'offline' };
       }
       return u;
@@ -113,10 +113,10 @@ class Room {
     const votable = this.votables.find(f => f.name === option);
     if (!votable) return this.sendError('Invalid option');
     const lowerName = name.toLowerCase().trim();
-    if (lowerName.length > 0) return null;
+    if (lowerName.length === 0) return null;
     this.votables = this.votables.map((v) => {
       const votesCopy = { ...v };
-      votesCopy.votes = v.votes.filter(vv => vv !== lowerName && vv.trim().length > 0);
+      votesCopy.votes = v.votes.filter(vv => vv.toLowerCase() !== lowerName && vv.trim().length > 0);
       if (v.name === option) {
         votesCopy.votes.push(lowerName);
       }
@@ -178,7 +178,7 @@ class Room {
   }
 
   broadcast(action, payload) {
-    console.log('broadcast', `room: ${this.name}`, `action: ${action}`, payload);
+    // console.log('broadcast', `room: ${this.name}`, `action: ${action}`, payload);
     this.io.in(this.slug).emit(action, payload);
   }
 
@@ -203,6 +203,9 @@ class Room {
     console.log(this.serialized());
     Object.assign(this, data);
     console.log(this.serialized());
+    if (this.votingOpen) {
+      this.startTimer();
+    }
   }
 
   serialized() {
