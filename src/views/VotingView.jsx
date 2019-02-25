@@ -22,7 +22,6 @@ class VotingView extends Component {
   }
 
   componentDidUpdate() {
-    console.log('cdu', this.state);;
     const { votingOpen } = this.props;
     const { votingInterval } = this.state;
     if (votingOpen) {
@@ -39,14 +38,15 @@ class VotingView extends Component {
     }
 
     const newInterval = setInterval(() => {
-      console.log('interval');
-      const { votingOpen } = this.props;
-      if (!votingOpen) return;
-      const { votingEnds } = this.props;
-      const timeRemaining = (new Date(votingEnds) - new Date()) / 1000;
-      console.log('tick', timeRemaining);
+      const { votingOpen, votingEnds } = this.props;
+      let timeRemaining = (new Date(votingEnds) - new Date()) / 1000;
+      timeRemaining = timeRemaining < 0 ? 0 : timeRemaining;
+      if (!votingOpen) {
+        this.setState({ timeRemaining: 0 });
+        return;
+      }
       this.setState({ timeRemaining });
-    }, 300);
+    }, 80);
     this.setState({ votingInterval: newInterval });
   }
 

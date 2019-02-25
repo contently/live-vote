@@ -59,7 +59,7 @@ class Room {
     if (lowerName.length === 0) return socket.emit('server-error', { message: { content: 'User name cannot be blank' } });
     let user = this.users.find(u => u.name === lowerName);
     if (!user) {
-      user = { lowerName, socket, status: 'online' };
+      user = { name: lowerName, socket, status: 'online' };
       this.users.push(user);
     }
     user.status = 'online';
@@ -73,10 +73,11 @@ class Room {
     this.users = this.users.reduce((all, u) => {
       if (!u || !u.name) return all;
       if (u.name.toLowerCase() === name.toLowerCase()) {
-        return { ...u, status: 'offline' };
+        return [...all, { ...u, status: 'offline' }];
       }
-      return u;
+      return [...all, u];
     }, []);
+    console.log('this.users', this.users);
     this.updateRoom();
     this.broadcast('room-updated', { room: this.serialized(), message: { content: `${name} left  ${this.name}`, type: 'warn' } });
   }
@@ -117,7 +118,9 @@ class Room {
     if (lowerName.length === 0) return null;
     this.votables = this.votables.map((v) => {
       const votesCopy = { ...v };
-      votesCopy.votes = v.votes.filter(vv => vv.toLowerCase() !== lowerName && vv.trim().length > 0);
+      votesCopy.votes = v.votes.filter(
+        vv => vv.toLowerCase() !== lowerName && vv.trim().length > 0
+      );
       if (v.name === option) {
         votesCopy.votes.push(lowerName);
       }
@@ -130,6 +133,9 @@ class Room {
   toggleVoting() {
     this.votingOpen = !this.votingOpen;
     if (this.votingOpen) {
+      this.votingEnds = new Date().setSeconds(
+        new Date().getSeconds() + this.voteDuration
+      );
       this.startTimer();
       this.updateRoom();
       this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} voting opened`, type: 'success' } });
@@ -148,9 +154,6 @@ class Room {
 
   startTimer() {
     this.votingOpen = true;
-    this.votingEnds = new Date().setSeconds(
-      new Date().getSeconds() + this.voteDuration
-    );
     this.updateRoom();
     this.votingInterval = setInterval(() => {
       const remaining = this.voteTimeRemaining() > 0 ? this.voteTimeRemaining() : 0;
@@ -174,6 +177,8 @@ class Room {
     this.votingOpen = false;
     this.timeRemaining = 0;
     this.sendError('voting ended');
+    this.updateRoom();
+    this.broadcast('room-updated', { room: this.serialized(), message: { content: `${this.name} sound toggled`, type: 'success' } });
   }
 
   voteTimeRemaining() {
@@ -228,6 +233,7 @@ class Room {
       rounds,
       state
     } = this;
+
     return {
       users: users.map(u => ({ name: u.name, status: u.status })),
       votables,
