@@ -58,7 +58,7 @@ class VotingView extends Component {
   canVote = (name, item) => {
     const { votingOpen } = this.props;
     if (!votingOpen) return false;
-    if ((item.votes || []).find(s => s === name)) {
+    if ((item.votes || []).find(s => s.toLowerCase() === name.toLowerCase())) {
       return false;
     }
     return true;
