@@ -116,7 +116,7 @@ class Room {
     if (lowerName.length > 0) return null;
     this.votables = this.votables.map((v) => {
       const votesCopy = { ...v };
-      votesCopy.votes = v.votes.filter(vv => vv !== lowerName);
+      votesCopy.votes = v.votes.filter(vv => vv !== lowerName && vv.trim().length > 0);
       if (v.name === option) {
         votesCopy.votes.push(lowerName);
       }
