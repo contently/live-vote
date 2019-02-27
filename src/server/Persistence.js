@@ -2,6 +2,7 @@ class Persistence {
   constructor(redisClient, basePath = '') {
     this.redis = redisClient;
     this.basePath = basePath;
+    this.moveKeys("live-vote/*");
   }
 
   async persist(key, data) {
@@ -58,6 +59,28 @@ class Persistence {
 
   fullPath(key) {
     return [this.basePath, key].join(':');
+  }
+
+  // TODO: Remove this code after a deployment
+  async moveKeys(fromKeysPattern) {
+    return new Promise(async (resolve, reject) => {
+      this.redis.keys(fromKeysPattern, (err, res) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        res.forEach(async (k) => {
+          console.log('re-mapping', k);
+          const data = await this.loadExact(k);
+          const newKey = k.replace(fromKeysPattern.replace('*', ''), '');
+          await this.persist(newKey, data);
+          await this.redis.del(k);
+        });
+
+        resolve(res);
+      });
+    });
   }
 }
 
