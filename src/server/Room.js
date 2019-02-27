@@ -118,10 +118,11 @@ class Room {
     if (lowerName.length === 0) return null;
     this.votables = this.votables.map((v) => {
       const votesCopy = { ...v };
+      const lengthBefore = v.votes.length;
       votesCopy.votes = v.votes.filter(
         vv => vv.toLowerCase() !== lowerName && vv.trim().length > 0
       );
-      if (v.name === option) {
+      if (v.name === option && votesCopy.votes.length === lengthBefore) {
         votesCopy.votes.push(lowerName);
       }
       return votesCopy;

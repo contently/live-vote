@@ -55,12 +55,9 @@ class VotingView extends Component {
     onCastVote(name);
   }
 
-  canVote = (name, item) => {
+  canVote = () => {
     const { votingOpen } = this.props;
     if (!votingOpen) return false;
-    if ((item.votes || []).find(s => s.toLowerCase() === name.toLowerCase())) {
-      return false;
-    }
     return true;
   }
 
@@ -76,11 +73,21 @@ class VotingView extends Component {
     return 'danger';
   }
 
+  voteButtonColor = (name, item) => {
+    const { votingOpen } = this.props;
+    if ((item.votes || []).find(s => s.toLowerCase() === name.toLowerCase())) {
+      return 'warning';
+    }
+    if (votingOpen) {
+      return 'primary';
+    }
+    return 'secondary';
+  }
+
 
   render() {
     const {
       votables,
-      votingOpen,
       name,
       voteDuration
     } = this.props;
@@ -117,7 +124,7 @@ class VotingView extends Component {
                     <Button
                       type="button"
                       onClick={() => this.onVote(v.name)}
-                      color={!votingOpen ? 'secondary' : 'primary'}
+                      color={this.voteButtonColor(name, v)}
                       disabled={!this.canVote(name, v)}
                     >
                       Vote
