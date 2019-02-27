@@ -1,7 +1,3 @@
-// const redis = require("redis");
-// const client = redis.createClient();
-const path = require('path');
-
 class Persistence {
   constructor(redisClient, basePath = '') {
     this.redis = redisClient;
@@ -14,7 +10,9 @@ class Persistence {
   }
 
   async load(key) {
-    const strData = await this.loadExact(path.join(this.basePath, key));
+    const fullKey = this.fullPath(key);
+    console.log('load', fullKey);
+    const strData = await this.loadExact(fullKey);
     return JSON.parse(strData);
   }
 
@@ -31,9 +29,9 @@ class Persistence {
     });
   }
 
-  async loadAll(key) {
+  async loadAll() {
     const allItems = await new Promise(async (resolve) => {
-      const keys = await this.loadAllKeys(key);
+      const keys = await this.loadAllKeys();
       resolve(
         await Promise.all(keys.map(async (k) => {
           const strData = await this.loadExact(k);
@@ -45,7 +43,7 @@ class Persistence {
   }
 
   async loadAllKeys(key = '*') {
-    const target = path.join(this.basePath, key);
+    const target = this.fullPath(key);
     console.log('load-all-keys', target);
     return new Promise((resolve, reject) => {
       this.redis.keys(target, (err, res) => {
@@ -59,7 +57,7 @@ class Persistence {
   }
 
   fullPath(key) {
-    return path.join(this.basePath, key);
+    return [this.basePath, key].join(':');
   }
 }
 

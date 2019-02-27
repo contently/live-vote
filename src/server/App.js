@@ -16,7 +16,7 @@ class App {
     this.state = {
       rooms: {}
     };
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379/';
     console.log('Persisting to', redisUrl);
     this.client = redis.createClient(redisUrl);
     this.persistence = new Persistence(this.client, 'live-vote');
@@ -66,6 +66,7 @@ class App {
 
   async loadRooms() {
     const rooms = await this.persistence.loadAll('rooms/*');
+    console.log('rooms', rooms);
     await rooms.forEach(async (room) => {
       const newRoom = this.createRoom(room.name, room.slug, this.io);
       await newRoom.loadFromPersistence();
