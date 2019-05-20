@@ -48,30 +48,30 @@ class VotingView extends Component {
       this.setState({ timeRemaining });
     }, 80);
     this.setState({ votingInterval: newInterval });
-  }
+  };
 
   onVote = (name) => {
     const { onCastVote } = this.props;
     onCastVote(name);
-  }
+  };
 
   canVote = () => {
     const { votingOpen } = this.props;
     if (!votingOpen) return false;
     return true;
-  }
+  };
 
   soundStatus = () => {
     const { votingOpen, soundEnabled } = this.props;
     return votingOpen && soundEnabled ? Sound.status.PLAYING : Sound.status.STOPPED;
-  }
+  };
 
   progressColor = (val, max) => {
     const perc = val / max;
     if (perc > 0.5) return 'success';
-    if (perc > 0.30) return 'warning';
+    if (perc > 0.3) return 'warning';
     return 'danger';
-  }
+  };
 
   voteButtonColor = (name, item) => {
     const { votingOpen } = this.props;
@@ -82,15 +82,14 @@ class VotingView extends Component {
       return 'primary';
     }
     return 'secondary';
-  }
+  };
 
+  cardTitle = str => str.split('|')[0];
+
+  cardBody = str => str.split('|')[1];
 
   render() {
-    const {
-      votables,
-      name,
-      voteDuration
-    } = this.props;
+    const { votables, name, voteDuration } = this.props;
     const { timeRemaining } = this.state;
     return (
       <div>
@@ -112,13 +111,20 @@ class VotingView extends Component {
                 <Col xs={12} md={4} key={v.name}>
                   <Card style={{ marginBottom: '20px' }}>
                     <CardBody>
-                      <h4 style={{ whiteSpace: 'nowrap', textOverflow: 'ellpisis' }}>{v.name}</h4>
+                      <h4 style={{ whiteSpace: 'nowrap', textOverflow: 'ellpisis' }}>
+                        {this.cardTitle(v.name)}
+                      </h4>
+                      {this.cardBody(v.name) && <p>{this.cardBody(v.name)}</p>}
                       <small style={{ whiteSpace: 'nowrap', textOverflow: 'ellpisis' }}>
                         {(v.votes || []).length}
                         <span> members</span>
                       </small>
                       <p>
-                        {(v.votes || []).map(n => <Badge key={n} color="info" style={{ marginRight: '5px' }}>{n}</Badge>)}
+                        {(v.votes || []).map(n => (
+                          <Badge key={n} color="info" style={{ marginRight: '5px' }}>
+                            {n}
+                          </Badge>
+                        ))}
                       </p>
                     </CardBody>
                     <Button
